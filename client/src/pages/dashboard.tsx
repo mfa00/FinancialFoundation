@@ -1,14 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar } from "lucide-react";
+import { useState } from "react";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { DashboardMetrics } from "@/components/dashboard-metrics";
-import { RecentTransactions } from "@/components/recent-transactions";
-import { QuickActions } from "@/components/quick-actions";
-import { OutstandingItems } from "@/components/outstanding-items";
 import { ChartAccountsOverview } from "@/components/chart-accounts-overview";
+import { RecentTransactions } from "@/components/recent-transactions";
+import { OutstandingItems } from "@/components/outstanding-items";
+import { QuickActions } from "@/components/quick-actions";
+import { AddCompanyDialog } from "@/components/add-company-dialog";
 import { Link } from "wouter";
 
 export default function Dashboard() {
+  const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const { currentCompany } = useCurrentCompany();
 
   const getCurrentDate = () => {
@@ -80,6 +83,11 @@ export default function Dashboard() {
         {/* Chart of Accounts Overview */}
         <ChartAccountsOverview />
       </main>
+
+      <AddCompanyDialog 
+        open={showAddCompanyDialog} 
+        onOpenChange={setShowAddCompanyDialog} 
+      />
     </div>
   );
 }
