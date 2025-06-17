@@ -42,40 +42,40 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Company management
   getCompany(id: number): Promise<Company | undefined>;
   getCompaniesByUser(userId: number): Promise<(Company & { role: string })[]>;
   createCompany(company: InsertCompany): Promise<Company>;
   addUserToCompany(companyId: number, userId: number, role: string): Promise<void>;
-  
+
   // Chart of Accounts
   getAccountsByCompany(companyId: number): Promise<Account[]>;
   getAccount(id: number): Promise<Account | undefined>;
   createAccount(account: InsertAccount): Promise<Account>;
   updateAccountBalance(accountId: number, balance: string): Promise<void>;
-  
+
   // Journal Entries
   getJournalEntriesByCompany(companyId: number, limit?: number): Promise<(JournalEntry & { lines: JournalEntryLine[] })[]>;
   getJournalEntry(id: number): Promise<(JournalEntry & { lines: JournalEntryLine[] }) | undefined>;
   createJournalEntry(entry: InsertJournalEntry, lines: InsertJournalEntryLine[]): Promise<JournalEntry>;
-  
+
   // Customers
   getCustomersByCompany(companyId: number): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  
+
   // Vendors
   getVendorsByCompany(companyId: number): Promise<Vendor[]>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
-  
+
   // Invoices
   getInvoicesByCompany(companyId: number): Promise<Invoice[]>;
   createInvoice(invoice: InsertInvoice, lines: InsertInvoiceLine[]): Promise<Invoice>;
-  
+
   // Expenses
   getExpensesByCompany(companyId: number, limit?: number): Promise<Expense[]>;
   createExpense(expense: InsertExpense): Promise<Expense>;
-  
+
   // Financial metrics
   getFinancialMetrics(companyId: number): Promise<{
     totalRevenue: string;
@@ -101,12 +101,15 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const [user] = await db
-      .insert(users)
-      .values({ ...insertUser, password: hashedPassword })
-      .returning();
+  async createUser(userData: InsertUser): Promise<User> {
+    // Check if password is already hashed (from registration route)
+    const isAlreadyHashed = userData.password.startsWith('$2b$') || userData.password.startsWith('$2a$');
+    const password = isAlreadyHashed ? userData.password : await bcrypt.hash(userData.password, 10);
+
+    const [user] = await db.insert(users).values({
+      ...userData,
+      password,
+    }).returning();
     return user;
   }
 
@@ -133,7 +136,7 @@ export class DatabaseStorage implements IStorage {
       .from(companies)
       .innerJoin(companyUsers, eq(companies.id, companyUsers.companyId))
       .where(eq(companyUsers.userId, userId));
-    
+
     return result;
   }
 
@@ -252,14 +255,14 @@ export class DatabaseStorage implements IStorage {
         const currentBalance = parseFloat(account.balance);
         const debitAmount = parseFloat(line.debitAmount);
         const creditAmount = parseFloat(line.creditAmount);
-        
+
         let newBalance = currentBalance;
         if (account.type === 'asset' || account.type === 'expense') {
           newBalance += debitAmount - creditAmount;
         } else {
           newBalance += creditAmount - debitAmount;
         }
-        
+
         await this.updateAccountBalance(line.accountId, newBalance.toFixed(2));
       }
     }

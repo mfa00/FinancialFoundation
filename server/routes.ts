@@ -50,18 +50,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      const user = await storage.createUser(userData);
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const userDataWithHashedPassword = {
+        ...userData,
+        password: hashedPassword
+      };
+
+      const user = await storage.createUser(userDataWithHashedPassword);
       req.session!.userId = user.id;
       
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
-      res.status(400).json({ message: "Invalid user data", error });
+      console.error("Registration error:", error);
+      res.status(400).json({ message: "Invalid user data", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+      
       const user = await storage.getUserByEmail(email);
       
       if (!user || !await bcrypt.compare(password, user.password)) {
@@ -82,7 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentCompanyId: companies[0]?.id 
       });
     } catch (error) {
-      res.status(500).json({ message: "Login failed", error });
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
