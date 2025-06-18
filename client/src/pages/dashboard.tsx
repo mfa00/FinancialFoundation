@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Ensure useEffect is imported
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { DashboardMetrics } from "@/components/dashboard-metrics";
 import { ChartAccountsOverview } from "@/components/chart-accounts-overview";
@@ -12,7 +12,14 @@ import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
-  const { currentCompany } = useCurrentCompany();
+  const { currentCompany, companies } = useCurrentCompany(); // Destructure companies
+
+  // useEffect to show AddCompanyDialog for new users
+  useEffect(() => {
+    if (!currentCompany && companies && companies.length === 0) {
+      setShowAddCompanyDialog(true);
+    }
+  }, [currentCompany, companies, setShowAddCompanyDialog]);
 
   const getCurrentDate = () => {
     return new Date().toLocaleDateString('en-US', {
@@ -23,17 +30,29 @@ export default function Dashboard() {
   };
 
   if (!currentCompany) {
+    // This message is shown when no company is selected.
+    // If it's a new user (no companies), the dialog will open automatically.
     return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-ibm-gray-100 mb-2">
-            No Company Selected
-          </h2>
-          <p className="text-ibm-gray-60 mb-4">
-            Please select a company or create a new one to get started.
-          </p>
+      <>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-ibm-gray-100 mb-2">
+              {companies && companies.length === 0 ? "Welcome to AccuBooks Pro!" : "No Company Selected"}
+            </h2>
+            <p className="text-ibm-gray-60 mb-4">
+              {companies && companies.length === 0 ? "Let's get you started by creating your first company." : "Please select a company or create a new one to continue."}
+            </p>
+            {/* Button to manually open dialog is not strictly needed if auto-opens, but can be a fallback */}
+            {companies && companies.length > 0 && (
+               <Button onClick={() => setShowAddCompanyDialog(true)}>Create New Company</Button>
+            )}
+          </div>
         </div>
-      </div>
+        {/* The AddCompanyDialog is rendered globally at the bottom of the main component structure,
+            and its 'open' state is controlled by 'showAddCompanyDialog'.
+            The useEffect hook correctly sets this state. So, no need to render it here again.
+        */}
+      </>
     );
   }
 
