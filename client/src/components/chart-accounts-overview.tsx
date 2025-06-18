@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { useCurrentCompany } from "@/hooks/use-current-company";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function ChartAccountsOverview() {
   const { currentCompany } = useCurrentCompany();
@@ -63,7 +63,7 @@ export function ChartAccountsOverview() {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-ibm-gray-100">Chart of Accounts Overview</h3>
             <div className="flex items-center space-x-4">
-              <Link href="/chart-of-accounts">
+              <Link to="/chart-of-accounts">
                 <Button variant="ghost" size="sm" className="text-ibm-blue hover:text-blue-700">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Account
@@ -75,7 +75,7 @@ export function ChartAccountsOverview() {
         <CardContent className="p-6">
           <div className="text-center py-8">
             <p className="text-ibm-gray-60 mb-4">No accounts found</p>
-            <Link href="/chart-of-accounts">
+            <Link to="/chart-of-accounts">
               <Button>Set Up Chart of Accounts</Button>
             </Link>
           </div>
@@ -93,13 +93,13 @@ export function ChartAccountsOverview() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-ibm-gray-100">Chart of Accounts Overview</h3>
           <div className="flex items-center space-x-4">
-            <Link href="/chart-of-accounts">
+            <Link to="/chart-of-accounts">
               <Button variant="ghost" size="sm" className="text-ibm-blue hover:text-blue-700">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Account
               </Button>
             </Link>
-            <Link href="/chart-of-accounts">
+            <Link to="/chart-of-accounts">
               <Button variant="ghost" size="sm" className="text-ibm-blue hover:text-blue-700">
                 View All
               </Button>

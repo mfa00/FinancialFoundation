@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   List, 
@@ -140,7 +140,7 @@ export function Sidebar({ onAddCompany }: SidebarProps) {
         {navigation.map((section) => (
           <div key={section.name} className="space-y-1">
             {section.href ? (
-              <Link href={section.href}>
+              <Link to={section.href}>
                 <Button
                   variant={section.current ? "secondary" : "ghost"}
                   className={`w-full justify-start ${
@@ -160,7 +160,7 @@ export function Sidebar({ onAddCompany }: SidebarProps) {
                     {section.name}
                   </h3>
                   {section.items?.map((item) => (
-                    <Link key={item.name} href={item.href}>
+                    <Link key={item.name} to={item.href}>
                       <Button
                         variant={item.current ? "secondary" : "ghost"}
                         className={`w-full justify-start ${

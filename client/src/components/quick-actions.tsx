@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Plus, BookOpen, Building2 } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function QuickActions() {
   const actions = [
@@ -43,7 +43,7 @@ export function QuickActions() {
       <CardContent className="p-6">
         <div className="grid grid-cols-2 gap-4">
           {actions.map((action) => (
-            <Link key={action.name} href={action.href}>
+            <Link key={action.name} to={action.href}>
               <Button 
                 variant="ghost" 
                 className="flex flex-col items-center p-4 h-auto border border-ibm-gray-20 hover:bg-ibm-gray-10 transition-colors group"

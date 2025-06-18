@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, CheckCircle } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function OutstandingItems() {
   // Mock data - in a real app, this would come from API calls
@@ -62,7 +62,7 @@ export function OutstandingItems() {
                 <div className="text-sm text-ibm-gray-60">{item.subtitle}</div>
               </div>
             </div>
-            <Link href={item.href}>
+            <Link to={item.href}>
               <Button variant="ghost" size="sm" className={`font-medium text-sm ${item.actionColor}`}>
                 {item.action}
               </Button>

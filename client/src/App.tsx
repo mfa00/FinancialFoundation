@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Switch, Route } from "wouter";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./lib/auth";
@@ -24,15 +24,15 @@ function AppLayout() {
   return (
     <div className="flex h-screen bg-ibm-gray-10">
       <Sidebar onAddCompany={() => setIsAddCompanyDialogOpen(true)} />
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/chart-of-accounts" component={ChartOfAccounts} />
-        <Route path="/journal-entries" component={JournalEntries} />
-        <Route path="/invoices" component={Invoices} />
-        <Route path="/expenses" component={Expenses} />
-        <Route path="/reports/:type?" component={Reports} />
-        <Route component={NotFound} />
-      </Switch>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/chart-of-accounts" element={<ChartOfAccounts />} />
+        <Route path="/journal-entries" element={<JournalEntries />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/expenses" element={<Expenses />} />
+        <Route path="/reports/:type?" element={<Reports />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       <AddCompanyDialog 
         open={isAddCompanyDialogOpen} 
         onOpenChange={setIsAddCompanyDialogOpen} 
@@ -46,9 +46,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
+          <Router>
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          </Router>
           <Toaster />
         </TooltipProvider>
       </AuthProvider>

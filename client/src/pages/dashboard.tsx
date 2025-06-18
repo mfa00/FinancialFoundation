@@ -8,7 +8,7 @@ import { RecentTransactions } from "@/components/recent-transactions";
 import { OutstandingItems } from "@/components/outstanding-items";
 import { QuickActions } from "@/components/quick-actions";
 import { AddCompanyDialog } from "@/components/add-company-dialog";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
@@ -49,7 +49,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/journal-entries">
+            <Link to="/journal-entries">
               <Button className="bg-ibm-blue hover:bg-ibm-blue/90">
                 <Plus className="mr-2 h-4 w-4" />
                 New Transaction

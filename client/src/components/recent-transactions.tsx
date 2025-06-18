@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus } from "lucide-react";
 import { useCurrentCompany } from "@/hooks/use-current-company";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 
 export function RecentTransactions() {
   const { currentCompany } = useCurrentCompany();
@@ -62,7 +62,7 @@ export function RecentTransactions() {
         <CardHeader className="border-b border-ibm-gray-20">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-ibm-gray-100">Recent Transactions</h3>
-            <Link href="/journal-entries">
+            <Link to="/journal-entries">
               <Button variant="ghost" size="sm" className="text-ibm-blue hover:text-blue-700">
                 View All
               </Button>
@@ -72,7 +72,7 @@ export function RecentTransactions() {
         <CardContent className="p-6">
           <div className="text-center py-8">
             <p className="text-ibm-gray-60">No transactions found</p>
-            <Link href="/journal-entries">
+            <Link to="/journal-entries">
               <Button className="mt-4">Create First Transaction</Button>
             </Link>
           </div>
@@ -86,7 +86,7 @@ export function RecentTransactions() {
       <CardHeader className="border-b border-ibm-gray-20">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-ibm-gray-100">Recent Transactions</h3>
-          <Link href="/journal-entries">
+          <Link to="/journal-entries">
             <Button variant="ghost" size="sm" className="text-ibm-blue hover:text-blue-700">
               View All
             </Button>
