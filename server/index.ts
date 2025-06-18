@@ -10,6 +10,7 @@ dotenv.config();
 const MemoryStoreSession = MemoryStore(session);
 
 const app = express();
+app.set('trust proxy', 1); // Enable if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
 
 // Trust proxy for correct IP identification behind nginx/load balancer
 app.set('trust proxy', true);
