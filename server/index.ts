@@ -1,11 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Initialize MemoryStore for development (with TTL to prevent memory leaks)
+const MemoryStoreSession = MemoryStore(session);
+
 const app = express();
+
+// Trust proxy for correct IP identification behind nginx/load balancer
+app.set('trust proxy', true);
 
 // Parse JSON bodies
 app.use(express.json());
@@ -16,6 +23,9 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "your-session-secret-change-in-production",
   resave: false,
   saveUninitialized: false,
+  store: new MemoryStoreSession({
+    checkPeriod: 86400000, // prune expired entries every 24h
+  }),
   cookie: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
