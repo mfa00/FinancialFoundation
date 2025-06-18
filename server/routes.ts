@@ -80,36 +80,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       };
 
-      console.log("Creating user with data:", { ...userDataWithHashedPassword, password: "[REDACTED]" });
-      const user = await storage.createUser(userDataWithHashedPassword);
+      console.log("Attempting to create user in storage with data:", {
+        email: userDataWithHashedPassword.email,
+        username: userDataWithHashedPassword.username,
+        firstName: userDataWithHashedPassword.firstName,
+        lastName: userDataWithHashedPassword.lastName,
+        role: userDataWithHashedPassword.role,
+        // Password is intentionally omitted here for logging security
+      });
+
+      let user;
+      try {
+        user = await storage.createUser(userDataWithHashedPassword);
+      } catch (storageError: any) {
+        console.error("Error during storage.createUser:", storageError);
+        console.error("Type of storageError:", typeof storageError);
+        if (storageError instanceof Error) {
+            console.error("storageError stack:", storageError.stack);
+        }
+        // Also log properties if it's an object but not an Error instance
+        if (typeof storageError === 'object' && storageError !== null) {
+            console.error("storageError properties:", Object.keys(storageError).map(key => `${key}: ${storageError[key]}`).join(', '));
+        }
+        throw storageError; // Re-throw to be caught by the outer try-catch
+      }
+
       console.log("User created successfully with ID:", user.id);
       
       req.session!.userId = user.id;
       
       res.json({ user: { ...user, password: undefined } });
-    } catch (error) {
+    } catch (error: any) { // Outer catch block
+      let errorMessageForLog = "Unknown error";
+      let errorStackForLog = undefined;
+      let errorTypeForLog = typeof error;
+      let additionalErrorDetails: Record<string, string> = {};
+
+      if (error instanceof Error) {
+        errorMessageForLog = error.message;
+        errorStackForLog = error.stack;
+      } else if (typeof error === 'string') {
+        errorMessageForLog = error;
+      } else if (error && typeof error === 'object') {
+        errorMessageForLog = error.message || JSON.stringify(error); // Attempt to get a message or stringify
+        try {
+          // Simple way to get some properties for logging without complex serialization
+          additionalErrorDetails = Object.fromEntries(
+            Object.getOwnPropertyNames(error).map(key => [key, String(error[key])]).slice(0, 10) // Limit properties
+          );
+        } catch (e) {
+          additionalErrorDetails = { stringificationError: "Could not stringify error properties" };
+        }
+      }
+
       console.error("Registration error details:", {
-        message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-        requestBody: { ...req.body, password: "[REDACTED]" }
+        type: errorTypeForLog,
+        message: errorMessageForLog,
+        stack: errorStackForLog,
+        additional: additionalErrorDetails,
+        requestBody: { ...req.body, password: "[REDACTED]" } // Keep password redacted
       });
 
       if (error instanceof z.ZodError) {
         const fieldErrors = error.flatten().fieldErrors;
-        const errors: { [key: string]: string } = {};
+        const errorsResponse: { [key: string]: string } = {};
         for (const field in fieldErrors) {
           if (fieldErrors[field]) {
-            errors[field] = fieldErrors[field]!.join(", ");
+            errorsResponse[field] = fieldErrors[field]!.join(", ");
           }
         }
         res.status(400).json({
           message: "Validation failed",
-          errors: errors
+          errors: errorsResponse
         });
       } else {
+        let clientErrorMessage = "An unexpected error occurred during registration.";
+        if (error instanceof Error && error.message) {
+          // Avoid sending overly technical or sensitive error messages to the client.
+          // For now, we send it, but in a real app, this might be curated.
+          clientErrorMessage = error.message;
+        } else if (typeof error === 'string' && error.length < 200) { // Avoid overly long strings
+          clientErrorMessage = error;
+        }
+
         res.status(400).json({
           message: "Invalid user data",
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: clientErrorMessage
         });
       }
     }
