@@ -59,9 +59,22 @@ export default function Login() {
         description: "You have been successfully logged in.",
       });
     } catch (error: any) {
+      let generalErrorMessage = "Please check your credentials and try again.";
+      if (error.message) {
+        try {
+          const parsedMessage = JSON.parse(error.message);
+          if (parsedMessage && typeof parsedMessage === 'object' && parsedMessage.message) {
+            generalErrorMessage = parsedMessage.message;
+          } else {
+            generalErrorMessage = error.message;
+          }
+        } catch (e) {
+          generalErrorMessage = error.message;
+        }
+      }
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: generalErrorMessage,
         variant: "destructive",
       });
     } finally {
@@ -78,11 +91,49 @@ export default function Login() {
         description: "Your account has been created successfully.",
       });
     } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
+      let serverErrors: Record<string, string> | null = null;
+      let generalErrorMessage = "Please try again.";
+      let toastTitle = "Registration failed";
+
+      if (error.message) {
+        try {
+          const parsedMessage = JSON.parse(error.message);
+          if (parsedMessage && typeof parsedMessage === 'object') {
+            if (parsedMessage.errors && typeof parsedMessage.errors === 'object') {
+              serverErrors = parsedMessage.errors;
+              generalErrorMessage = parsedMessage.message || "Please correct the issues below.";
+            } else if (parsedMessage.message) {
+              generalErrorMessage = parsedMessage.message;
+            } else {
+              generalErrorMessage = error.message; // Fallback if no specific structure found
+            }
+          } else {
+            generalErrorMessage = error.message; // Message is not an object
+          }
+        } catch (e) {
+          // error.message was not a JSON string
+          generalErrorMessage = error.message;
+        }
+      }
+
+      if (serverErrors) {
+        Object.entries(serverErrors).forEach(([field, message]) => {
+          if (message && typeof message === 'string') { // Ensure message is a string
+            registerForm.setError(field as keyof RegisterForm, { type: "server", message });
+          }
+        });
+        toast({
+          title: toastTitle,
+          description: generalErrorMessage,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: toastTitle,
+          description: generalErrorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
