@@ -80,6 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       };
 
+
       console.log("Attempting to create user in storage with data:", {
         email: userDataWithHashedPassword.email,
         username: userDataWithHashedPassword.username,
@@ -132,6 +133,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
           additionalErrorDetails = { stringificationError: "Could not stringify error properties" };
         }
       }
+
+
+      console.log("Creating user with data:", { ...userDataWithHashedPassword, password: "[REDACTED]" });
+      
+      try {
+        const user = await storage.createUser(userDataWithHashedPassword);
+        console.log("User created successfully with ID:", user.id);
+        
+        req.session!.userId = user.id;
+        
+        res.json({ user: { ...user, password: undefined } });
+      } catch (dbError) {
+        console.error("Database error during user creation:", {
+          message: dbError instanceof Error ? dbError.message : "Unknown database error",
+          stack: dbError instanceof Error ? dbError.stack : undefined,
+          code: (dbError as any)?.code,
+          constraint: (dbError as any)?.constraint,
+          detail: (dbError as any)?.detail
+        });
+        
+        // Handle specific database errors
+        if (dbError instanceof Error) {
+          if (dbError.message.includes('unique') || (dbError as any)?.code === '23505') {
+            return res.status(400).json({ 
+              message: "User already exists", 
+              error: "A user with this email or username already exists" 
+            });
+          }
+          
+          if (dbError.message.includes('not null') || (dbError as any)?.code === '23502') {
+            return res.status(400).json({ 
+              message: "Missing required field", 
+              error: "One or more required fields are missing" 
+            });
+          }
+        }
+        
+        // Generic database error
+        res.status(500).json({ 
+          message: "Registration failed", 
+          error: "Database error occurred during registration" 
+        });
+      }
+    } catch (error) {
 
       console.error("Registration error details:", {
         type: errorTypeForLog,
