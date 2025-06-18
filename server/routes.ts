@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import { insertUserSchema, insertCompanySchema, insertAccountSchema, insertJournalEntrySchema, insertJournalEntryLineSchema, insertCustomerSchema, insertVendorSchema, insertInvoiceSchema, insertInvoiceLineSchema, insertExpenseSchema } from "@shared/schema";
 import { z } from "zod";
+import rateLimit from 'express-rate-limit';
 
 // Session middleware setup
 declare module 'express-session' {
@@ -40,8 +41,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Rate limiters
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,
+    message: "Too many login attempts from this IP, please try again after 15 minutes",
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20,
+    message: "Too many accounts created from this IP, please try again after an hour",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
   // Auth routes
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", registerLimiter, async (req, res) => {
     try {
       console.log("Registration attempt with data:", { ...req.body, password: "[REDACTED]" });
       
@@ -75,23 +93,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stack: error instanceof Error ? error.stack : undefined,
         requestBody: { ...req.body, password: "[REDACTED]" }
       });
-      
-      if (error instanceof Error && error.message.includes('parse')) {
-        res.status(400).json({ 
-          message: "Invalid user data", 
-          error: error.message,
-          details: "Schema validation failed - please check required fields"
+
+      if (error instanceof z.ZodError) {
+        const fieldErrors = error.flatten().fieldErrors;
+        const errors: { [key: string]: string } = {};
+        for (const field in fieldErrors) {
+          if (fieldErrors[field]) {
+            errors[field] = fieldErrors[field]!.join(", ");
+          }
+        }
+        res.status(400).json({
+          message: "Validation failed",
+          errors: errors
         });
       } else {
-        res.status(400).json({ 
-          message: "Invalid user data", 
-          error: error instanceof Error ? error.message : "Unknown error" 
+        res.status(400).json({
+          message: "Invalid user data",
+          error: error instanceof Error ? error.message : "Unknown error"
         });
       }
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
       
