@@ -275,7 +275,9 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
 }));
 
 // Zod schemas
-export const insertUserSchema = createInsertSchema(users).omit({
+export const insertUserSchema = createInsertSchema(users, { 
+  role: z.string().optional() 
+}).omit({
   id: true,
   createdAt: true,
 });

@@ -43,10 +43,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
+      console.log("Registration attempt with data:", { ...req.body, password: "[REDACTED]" });
+      
       const userData = insertUserSchema.parse(req.body);
+      console.log("Schema validation passed for user:", userData.email);
+      
       const existingUser = await storage.getUserByEmail(userData.email);
       
       if (existingUser) {
+        console.log("Registration failed: User already exists for email:", userData.email);
         return res.status(400).json({ message: "User already exists" });
       }
 
@@ -57,13 +62,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       };
 
+      console.log("Creating user with data:", { ...userDataWithHashedPassword, password: "[REDACTED]" });
       const user = await storage.createUser(userDataWithHashedPassword);
+      console.log("User created successfully with ID:", user.id);
+      
       req.session!.userId = user.id;
       
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
-      console.error("Registration error:", error);
-      res.status(400).json({ message: "Invalid user data", error: error instanceof Error ? error.message : "Unknown error" });
+      console.error("Registration error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        requestBody: { ...req.body, password: "[REDACTED]" }
+      });
+      
+      if (error instanceof Error && error.message.includes('parse')) {
+        res.status(400).json({ 
+          message: "Invalid user data", 
+          error: error.message,
+          details: "Schema validation failed - please check required fields"
+        });
+      } else {
+        res.status(400).json({ 
+          message: "Invalid user data", 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
     }
   });
 
